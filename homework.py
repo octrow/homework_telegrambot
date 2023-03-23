@@ -4,11 +4,15 @@ import os
 import sys
 import time
 
+# import pickle #v.2
 import jsonschema
 import requests
 import telegram
+# from dotenv import load_dotenv, set_key, find_dotenv #v.3
 from dotenv import load_dotenv
 
+# dotenv_file = find_dotenv() #v.3
+# load_dotenv(dotenv_file, override=True) #v.3
 load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv("PRACTICUM_TOKEN")
@@ -18,6 +22,8 @@ TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
 RETRY_PERIOD = 600
 ENDPOINT = "https://practicum.yandex.ru/api/user_api/homework_statuses/"
 HEADERS = {"Authorization": "OAuth " + PRACTICUM_TOKEN}
+
+# FILENAME = "last_status.pkl" #v.2
 
 DAYSNUM = 30
 
@@ -51,6 +57,19 @@ class SendError(Exception):
 
     pass
 
+# def save_last_status(last_status): #v.2
+#     """Сохранение последнего статуса используя pickle."""
+#     with open(FILENAME, "wb") as file:
+#         pickle.dump(last_status, file)
+
+# def load_last_status(): #v.2
+#     """Подгрузка последнего статуса используя pickle."""
+#     try:
+#         with open(FILENAME, "rb") as file:
+#             last_status = pickle.load(file)
+#     except FileNotFoundError:
+#         last_status = None
+#     return last_status
 
 def handle_error(bot: telegram.bot.Bot, error, message):
     """Отправка сообщений и логирование о исключениях и ошибках."""
@@ -209,13 +228,11 @@ def main():
     logging.info("Бот запущен.")
     fromdate = number_days(DAYSNUM)
     logging.info("Расчёт даты закончился")
-    # last_status = None
-    last_status_file = "last_status.txt"
-    if os.path.exists(last_status_file):
-        with open(last_status_file, "r") as f:
-            last_status = f.read().strip()
-    else:
-        last_status = None
+    # last_status = load_last_status() #v.2
+
+    # global last_status #v.3
+    # last_status = os.environ["LAST_STATUS"] #v.3
+    last_status = None
     while True:
         try:
             response = get_api_answer(fromdate)
@@ -223,12 +240,13 @@ def main():
             last_homework = response.get("homeworks")[0]
             if last_status != last_homework.get("status"):
                 logging.info("Обнаружено изменение статуса.")
-                last_status = str(last_homework.get("status"))
+                middle_status = last_homework.get("status")
                 message = parse_status(last_homework)
                 send_message(bot, message)
+                # save_last_status(last_status) # v.2
 
-                with open(last_status_file, "w") as f:
-                    f.write(last_status)
+                # os.environ["LAST_STATUS"] = middle_status # v.3
+                # set_key(dotenv_file, "LAST_STATUS", os.environ["LAST_STATUS"]) #v.3
         except Exception as error:
             handle_error(bot, error, "Сбой в работе программы: {}")
         finally:

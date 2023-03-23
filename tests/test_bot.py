@@ -42,6 +42,7 @@ class TestHomework:
         'rejected': 'Работа проверена: у ревьюера есть замечания.'
     }
     ENV_VARS = ['PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']
+    
     HOMEWORK_CONSTANTS = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN',
                           'TELEGRAM_CHAT_ID', 'RETRY_PERIOD',
                           'ENDPOINT', 'HEADERS', 'HOMEWORK_VERDICTS')
