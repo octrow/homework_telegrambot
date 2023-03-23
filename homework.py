@@ -209,17 +209,26 @@ def main():
     logging.info("Бот запущен.")
     fromdate = number_days(DAYSNUM)
     logging.info("Расчёт даты закончился")
-    last_status = None
+    # last_status = None
+    last_status_file = "last_status.txt"
+    if os.path.exists(last_status_file):
+        with open(last_status_file, "r") as f:
+            last_status = f.read().strip()
+    else:
+        last_status = None
     while True:
         try:
             response = get_api_answer(fromdate)
             check_response(response)
             last_homework = response.get("homeworks")[0]
-            if last_status is not last_homework.get("status"):
+            if last_status != last_homework.get("status"):
                 logging.info("Обнаружено изменение статуса.")
-                last_status = last_homework.get("status")
+                last_status = str(last_homework.get("status"))
                 message = parse_status(last_homework)
                 send_message(bot, message)
+
+                with open(last_status_file, "w") as f:
+                    f.write(last_status)
         except Exception as error:
             handle_error(bot, error, "Сбой в работе программы: {}")
         finally:
