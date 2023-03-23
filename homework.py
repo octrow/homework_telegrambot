@@ -47,10 +47,13 @@ last_error = None
 
 
 class SendError(Exception):
+    """Объявление нового класса для исключений в handle_error."""
+
     pass
 
 
 def handle_error(bot: telegram.bot.Bot, error, message):
+    """Отправка сообщений и логирование о исключениях и ошибках."""
     global last_error
     logging.error(f"{message}: {error}")
     if error != last_error:
@@ -70,7 +73,7 @@ def handle_error(bot: telegram.bot.Bot, error, message):
 
 
 def number_days(number):
-    """Возвращает дату на number дней назад в unix time"""
+    """Возвращает дату на number дней назад в unix time."""
     logging.info("Расчёт даты начался")
     end_time = datetime.datetime.now()
     start_time = end_time - datetime.timedelta(days=number)
@@ -78,7 +81,7 @@ def number_days(number):
 
 
 def check_tokens():
-    """Проверяем токены, если нет - возвращаем False"""
+    """Проверяем токены, если нет - возвращаем False."""
     logging.info("Проверка токенов начата")
     required_tokens = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
     if all(required_tokens):
@@ -89,7 +92,7 @@ def check_tokens():
 
 
 def send_message(bot: telegram.bot.Bot, message):
-    """Отправление сообщения в Telegram бот"""
+    """Отправление сообщения в Telegram бот."""
     try:
         logging.info("Старт отправки сообщения.")
         bot.send_message(TELEGRAM_CHAT_ID, message)
@@ -103,8 +106,10 @@ def send_message(bot: telegram.bot.Bot, message):
 
 
 def get_api_answer(days_num):
-    """Получает ответ от API на запрос json домашних работы.
-    Проверяет наличие ответа и ожидаемые ключи в API."""
+    """
+    Получает ответ от API на запрос json домашних работы.
+    Проверяет наличие ответа и ожидаемые ключи в API.
+    """
     params_api = {
         "url": ENDPOINT,
         "headers": HEADERS,
