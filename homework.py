@@ -71,6 +71,7 @@ class SendError(Exception):
 #         last_status = None
 #     return last_status
 
+
 def handle_error(bot: telegram.bot.Bot, error, message):
     """Отправка сообщений и логирование о исключениях и ошибках."""
     global last_error
@@ -169,8 +170,10 @@ def check_response(response):
         if not isinstance(response, dict) or not all(
             key in response for key in ("homeworks", "current_date")
         ):
-            text = ("Ответ API не является словарем или не содержит "
-                    "ожидаемых ключей: 'homeworks' или 'current_date'")
+            text = (
+                "Ответ API не является словарем или не содержит "
+                "ожидаемых ключей: 'homeworks' или 'current_date'"
+            )
             logging.error(text, response)
             raise ValueError(text)
         if not isinstance(response["homeworks"], list):
@@ -199,8 +202,10 @@ def parse_status(homework):
         if not isinstance(homework, dict) or not all(
             key in homework for key in ("status", "homework_name")
         ):
-            text = ("homework не является словарем или не содержит ожидаемых "
-                    "ключей: 'status' или 'homework_name'")
+            text = (
+                "homework не является словарем или не содержит ожидаемых "
+                "ключей: 'status' или 'homework_name'"
+            )
             logging.error(text, homework)
             raise ValueError(text)
         homework_status = homework.get("status")
@@ -240,13 +245,16 @@ def main():
             last_homework = response.get("homeworks")[0]
             if last_status != last_homework.get("status"):
                 logging.info("Обнаружено изменение статуса.")
-                middle_status = last_homework.get("status")
+                # middle_status = last_homework.get("status") v.3
+                last_status = last_homework.get("status")
                 message = parse_status(last_homework)
                 send_message(bot, message)
                 # save_last_status(last_status) # v.2
 
                 # os.environ["LAST_STATUS"] = middle_status # v.3
-                # set_key(dotenv_file, "LAST_STATUS", os.environ["LAST_STATUS"]) #v.3
+                # set_key( #v.3
+                # dotenv_file, "LAST_STATUS", os.environ["LAST_STATUS"] #v.3
+                # ) #v.3
         except Exception as error:
             handle_error(bot, error, "Сбой в работе программы: {}")
         finally:
