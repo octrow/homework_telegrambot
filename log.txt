@@ -1,0 +1,4 @@
+2023-03-23 05:21:09,929, CRITICAL, Путь - secondhomwork.py, Файл - secondhomwork.py, Функция - main, Номер строки - 109, Отсутствует необходимое кол-во переменных окружения
+2023-03-23 05:22:01,325, INFO, Путь - secondhomwork.py, Файл - secondhomwork.py, Функция - get_api_answer, Номер строки - 56, Начало запроса: url = https://practicum.yandex.ru/api/user_api/homework_statuses/,headers = {'Authorization': 'OAuth y0_AgAAAAAAOrdjAAYckQAAAADfBpulFVlmIBoOTUS-bkBTOXSIcPyR-es'},params = {'from_date': 1679527321}
+2023-03-23 05:22:01,747, INFO, Путь - secondhomwork.py, Файл - secondhomwork.py, Функция - send_message, Номер строки - 32, Начало отправки
+2023-03-23 05:22:02,174, INFO, Путь - secondhomwork.py, Файл - secondhomwork.py, Функция - send_message, Номер строки - 41, Сообщение отправлено  , Нет новых статусов работ.
