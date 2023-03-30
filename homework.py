@@ -7,6 +7,8 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
+from exceptions import Not200Response, EmptyAnswerAPI
+
 
 load_dotenv()
 
@@ -27,43 +29,29 @@ HOMEWORK_VERDICTS = {
 last_error = None
 
 
-class SendError(Exception):
-    """Объявление нового класса для исключений."""
-
-    pass
-
-
-class Not200Response(Exception):
-    """Объявление нового класса для исключений в get_api_answer."""
-
-    pass
-
-
-class EmptyAnswerAPI(Exception):
-    """Объявление нового класса для исключений в check_response."""
-
-    pass
-
-
 def check_tokens():
     """Проверяем токены, если нет - возвращаем False."""
     logging.info("Проверка токенов начата")
-    token_names = ("PRACTICUM_TOKEN", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID")
-    token_values = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
-    result = True
-    for name, value in zip(token_names, token_values):
+    tokens = (
+        ("PRACTICUM_TOKEN", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID"),
+        (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID),
+    )
+    missing_tokens = []
+    for name, value in zip(*tokens):
         if not value:
             logging.critical(f"Требуемый токен: {name} недоступен.")
-            raise ValueError(f"Не найден токен: {name}")
-    return result
+            missing_tokens.append(name)
+    if missing_tokens:
+        raise ValueError(f"Не найдены токены: {', '.join(missing_tokens)}")
+    return True
 
 
 def send_message(bot: telegram.bot.Bot, message):
     """Отправление сообщения в Telegram бот."""
-    logging.info("Старт отправки сообщения.")
+    logging.info("Старт отправки сообщения: " + message)
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logging.debug("Сообщение отправлено")
+        logging.debug("Сообщение отправлено, текст: " + message)
         return True
     except telegram.error.TelegramError as error:
         text = "Ошибка отправки сообщения telegram: "
@@ -94,35 +82,28 @@ def get_api_answer(fromdate):
             raise Not200Response(error_message)
         logging.info("Запрос GET API выполнен.")
         return response.json()
-    except ConnectionError as error:
-        text = (
-            "Ошибка соединения: "
-            + str(error)
-            + "{url} {headers} {params}".format(**params_api)
-        )
-        raise ConnectionError(text)
     except requests.RequestException as error:  # для прохождения тестов!
         text = (
-            "Ошибка запроса: "
+            "Ошибка: "
             + str(error)
             + "{url} {headers} {params}".format(**params_api)
         )
-        logging.error(text)
+        if isinstance(error, ConnectionError):
+            raise ConnectionError(text)
+        else:
+            logging.error(text)
 
 
 def check_response(response):
     """Проверяем ответ API на соответствие."""
     logging.info("Начало проверки check_response ответа от API.")
     if not isinstance(response, dict):
-        text = "Ответ API не является словарем"
-        raise TypeError(text)  # требование тестов!
+        raise TypeError("Ответ API не является словарем")  # требование тестов!
     if "homeworks" not in response:
-        text = "Ответ API не содержит ключа 'homeworks'"
-        raise EmptyAnswerAPI(text)
+        raise EmptyAnswerAPI("Ответ API не содержит ключа 'homeworks'")
     response = response.get("homeworks")
     if not isinstance(response, list):
-        text = "API под ключом `homeworks` приходят не в виде списка"
-        raise TypeError(text)
+        raise TypeError("API под ключом `homeworks` приходят не в виде списка")
     return response
 
 
@@ -131,20 +112,16 @@ def parse_status(homework):
     homework_status = homework.get("status")
     homework_name = homework.get("homework_name")
     if homework_status not in HOMEWORK_VERDICTS:
-        text = "homework_status нет в HOMEWORK_VERDICTS"
-        raise ValueError(text)
+        raise ValueError("homework_status нет в HOMEWORK_VERDICTS")
     if homework_name is None:  # для прохождения тестов!
-        text = "homework_name отсутствует"
-        raise KeyError(text)
+        raise KeyError("homework_name отсутствует")
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def main():
     """Основная логика работы бота."""
-    if not check_tokens():
-        info_message = "Проблемы с токенами. Программа прервана."
-        logging.critical(info_message)
+    check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     logging.info("Бот запущен.")
     current_report = {"name": None, "messages": None}
@@ -154,11 +131,15 @@ def main():
         try:
             response = get_api_answer(fromdate)
             homeworks = check_response(response)
-            if len(homeworks) == 0:
-                logging.debug("В homeworks пустой список")
+            if not homeworks:
+                text = "В homeworks пустой список"
+                logging.debug(text)
+                current_report = {
+                    "name": None,
+                    "messages": text,
+                }
             else:
                 last_homework = homeworks[0]
-                fromdate = 0
                 message = parse_status(last_homework)
                 current_report = {
                     "name": last_homework.get("name"),
@@ -166,18 +147,21 @@ def main():
                 }
             if current_report != prev_report:
                 logging.info("Обнаружено изменение в статусе homework.")
-                if send_message(bot, message):
+                if send_message(bot, current_report["messages"]):
                     prev_report = current_report.copy()
-                    fromdate = response.get("current_date")
+                    fromdate = response.get("current_date", int(time.time()))
             else:
                 logging.debug("Нет изменений в статусе дз. Ждём 10 мин.")
         except EmptyAnswerAPI as error:
-            text = "пустой ответ от API " + str(error)
-            logging.error(text)
+            logging.error("пустой ответ от API " + str(error))
         except Exception as error:
-            text = "Сбой в работе программы: " + str(error)
-            logging.error(text)
-            send_message(bot, text)
+            current_report["messages"] = "Сбой в работе программы: " + str(
+                error
+            )
+            logging.error(current_report["messages"])
+            if current_report != prev_report:
+                send_message(bot, current_report["messages"])
+                prev_report = current_report.copy()
         finally:
             time.sleep(RETRY_PERIOD)
 
