@@ -33,11 +33,12 @@ def check_tokens():
     """Проверяем токены, если нет - возвращаем False."""
     logging.info("Проверка токенов начата")
     tokens = (
-        ("PRACTICUM_TOKEN", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID"),
-        (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID),
+        ("PRACTICUM_TOKEN", PRACTICUM_TOKEN), 
+        ("TELEGRAM_TOKEN", TELEGRAM_TOKEN),
+        ("TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID),
     )
     missing_tokens = []
-    for name, value in zip(*tokens):
+    for name, value in tokens:
         if not value:
             logging.critical(f"Требуемый токен: {name} недоступен.")
             missing_tokens.append(name)
@@ -75,23 +76,20 @@ def get_api_answer(fromdate):
     )
     try:
         response = requests.get(**params_api)
+        logging.info("Запрос GET API выполнен.")
+    except Exception as error:
+        raise ConnectionError(
+            "Ошибка: "
+            + str(error)
+            + "{url} {headers} {params}".format(**params_api)
+        )
+    else:
         if response.status_code != HTTPStatus.OK:
             error_message = "Ответ сервера не 200, a {}".format(
                 response.status_code
             )
             raise Not200Response(error_message)
-        logging.info("Запрос GET API выполнен.")
         return response.json()
-    except requests.RequestException as error:  # для прохождения тестов!
-        text = (
-            "Ошибка: "
-            + str(error)
-            + "{url} {headers} {params}".format(**params_api)
-        )
-        if isinstance(error, ConnectionError):
-            raise ConnectionError(text)
-        else:
-            logging.error(text)
 
 
 def check_response(response):
@@ -132,11 +130,9 @@ def main():
             response = get_api_answer(fromdate)
             homeworks = check_response(response)
             if not homeworks:
-                text = "В homeworks пустой список"
-                logging.debug(text)
                 current_report = {
                     "name": None,
-                    "messages": text,
+                    "messages": "В homeworks пустой список",
                 }
             else:
                 last_homework = homeworks[0]
@@ -146,7 +142,6 @@ def main():
                     "messages": message,
                 }
             if current_report != prev_report:
-                logging.info("Обнаружено изменение в статусе homework.")
                 if send_message(bot, current_report["messages"]):
                     prev_report = current_report.copy()
                     fromdate = response.get("current_date", int(time.time()))
