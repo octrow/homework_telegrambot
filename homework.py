@@ -7,8 +7,8 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
+from exceptions import Not200Response, EmptyAnswerAPI
 
-from exceptions import EmptyAnswerAPI, Not200Response
 
 load_dotenv()
 
@@ -33,7 +33,7 @@ def check_tokens():
     """Проверяем токены, если нет - возвращаем False."""
     logging.info("Проверка токенов начата")
     tokens = (
-        ("PRACTICUM_TOKEN", PRACTICUM_TOKEN), 
+        ("PRACTICUM_TOKEN", PRACTICUM_TOKEN),
         ("TELEGRAM_TOKEN", TELEGRAM_TOKEN),
         ("TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID),
     )
