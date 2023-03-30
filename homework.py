@@ -7,8 +7,8 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
-from exceptions import Not200Response, EmptyAnswerAPI
 
+from exceptions import EmptyAnswerAPI, Not200Response
 
 load_dotenv()
 
