@@ -1,9 +1,7 @@
-import datetime
 import logging
 import os
 import sys
 import time
-import traceback
 from http import HTTPStatus
 
 import requests
@@ -118,7 +116,7 @@ def check_response(response):
     if not isinstance(response, dict):
         text = "Ответ API не является словарем"
         raise TypeError(text)  # требование тестов!
-    if not "homeworks" in response:
+    if "homeworks" not in response:
         text = "Ответ API не содержит ключа 'homeworks'"
         raise EmptyAnswerAPI(text)
     response = response.get("homeworks")
@@ -186,7 +184,10 @@ def main():
 
 if __name__ == "__main__":
     logging.basicConfig(
-        format="%(asctime)s - %(name)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s",
+        format=(
+            "%(asctime)s - %(name)s - %(funcName)s - %(lineno)d - "
+            "%(levelname)s - %(message)s"
+        ),
         level=logging.DEBUG,
         handlers=[
             logging.FileHandler(
