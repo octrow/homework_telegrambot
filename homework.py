@@ -144,7 +144,7 @@ def main():
             if current_report != prev_report:
                 if send_message(bot, current_report["messages"]):
                     prev_report = current_report.copy()
-                    fromdate = response.get("current_date", int(time.time()))
+                    fromdate = response.get("current_date", fromdate)
             else:
                 logging.debug("Нет изменений в статусе дз. Ждём 10 мин.")
         except EmptyAnswerAPI as error:
