@@ -26,8 +26,6 @@ HOMEWORK_VERDICTS = {
     "rejected": "Работа проверена: у ревьюера есть замечания.",
 }
 
-last_error = None
-
 
 def check_tokens():
     """Проверяем токены, если нет - возвращаем False."""
@@ -77,19 +75,18 @@ def get_api_answer(fromdate):
     try:
         response = requests.get(**params_api)
         logging.info("Запрос GET API выполнен.")
-    except Exception as error:
-        raise ConnectionError(
-            "Ошибка: "
-            + str(error)
-            + "{url} {headers} {params}".format(**params_api)
-        )
-    else:
         if response.status_code != HTTPStatus.OK:
             error_message = "Ответ сервера не 200, a {}".format(
                 response.status_code
             )
             raise Not200Response(error_message)
         return response.json()
+    except Exception as error:
+        raise ConnectionError(
+            "Ошибка: "
+            + str(error)
+            + "{url} {headers} {params}".format(**params_api)
+        )
 
 
 def check_response(response):
@@ -124,7 +121,7 @@ def main():
     logging.info("Бот запущен.")
     current_report = {"name": None, "messages": None}
     prev_report = {"name": None, "messages": None}
-    fromdate = 0
+    fromdate = int(time.time())
     while True:
         try:
             response = get_api_answer(fromdate)
@@ -138,10 +135,13 @@ def main():
                 last_homework = homeworks[0]
                 message = parse_status(last_homework)
                 current_report = {
-                    "name": last_homework.get("name"),
+                    "name": last_homework.get("homework_name"),
                     "messages": message,
                 }
-            if current_report != prev_report:
+            if (
+                current_report != prev_report
+                and current_report["name"] is not None
+            ):
                 if send_message(bot, current_report["messages"]):
                     prev_report = current_report.copy()
                     fromdate = response.get("current_date", fromdate)
